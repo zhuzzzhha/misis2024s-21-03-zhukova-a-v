@@ -3,47 +3,67 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
-void ConcatenateJpegExt(std::string& sFileName) {
-    if (sFileName.size() > 4)
-    {
-        if (sFileName.substr(sFileName.length() - 5) != ".jpg")
-            sFileName += ".jpg";
+void gammaCorrection(const cv::Mat& src, cv::Mat& dst, const float gamma)
+{
+    float invGamma = 1 / gamma;
+
+    cv::Mat table(1, 256, CV_8U);
+    uchar* p = table.ptr();
+    for (int i = 0; i < 256; ++i) {
+        p[i] = (uchar)(pow(i / 255.0, invGamma) * 255);
     }
-    else  sFileName += ".jpg";
+
+    cv::LUT(src, table, dst);
 }
 int main(int argc, char* argv[]) {
 
-    int s = 3, h = 20;
-    float gamma = 2.4;
+    int s, h;
+    double gamma;
     int max_color = 256;
+    std::string output_file = "";
 
-    if (argc > 1)
+    cv::CommandLineParser parser(argc, argv,
+        "{s         | 3| size value}"
+        "{h         | 20| height value}"
+        "{gamma          | 2.4| gamma value}"
+        "{@file_name | | file name}");
+
+    s = parser.get<int>("s");
+    h = parser.get<int>("h");
+    gamma = parser.get<double>("gamma");
+    output_file = parser.get<std::string>("@file_name");
+
+   /* if (argc > 1)
         s = std::stoi(argv[1]);
     if (argc > 2)
         h = std::stoi(argv[2]);
     if (argc > 3)
-        gamma = std::stoi(argv[3]);
+        gamma = std::stof(argv[3]);*/
 
     int border = 10;
-    cv::Mat image(h*256 + border, s*256 + border, CV_8UC3, cv::Scalar(255, 255, 255));
+    int image_height = h, image_width = 256 * s;
+    cv::Mat image(image_height, image_width, CV_8UC3, cv::Scalar(255, 255, 255));
 
     int x_pos = 5, y_pos = 5;
     for (int i = 0; i < max_color; ++i) {
         cv::Scalar color(i, i, i);
         cv::Rect strip_rect(x_pos, y_pos, s, h);
-        cv::rectangle(image, strip_rect, color,-1);
-        y_pos += h;
+        cv::rectangle(image, strip_rect, color, -1);
+        x_pos += s;
     }
-    /*cv::pow(image / 255.0, gamma, image);
-    image *= 255;*/
+
+    cv::Mat gammaImg(image_height, image_width, CV_8UC3, cv::Scalar(255, 255, 255));
+    gammaCorrection(image, gammaImg, gamma);
     
-    if (argc > 4) {
-        std::string output_file = argv[4];
-        ConcatenateJpegExt(output_file);
-        cv::imwrite(output_file, image);
+    cv::vconcat(image, gammaImg, image);
+
+
+    if (output_file.size()) {
+        cv::imwrite(cv::String(output_file), image);
     }
-        cv::imshow("Gradient Image", image);
-        cv::waitKey(0);
-        cv::destroyAllWindows();
+    
+    cv::imshow("Gradient Image", image);
+    cv::waitKey(0);
+    cv::destroyAllWindows();
 
 }
