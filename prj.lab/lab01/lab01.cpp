@@ -2,6 +2,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <filesystem>
 
 void gammaCorrection(const cv::Mat& src, cv::Mat& dst, const float gamma)
 {
@@ -21,6 +22,7 @@ int main(int argc, char* argv[]) {
     double gamma;
     int max_color = 256;
     std::string output_file = "";
+    std::filesystem::path executable_path = std::filesystem::current_path();
 
     cv::CommandLineParser parser(argc, argv,
         "{s         | 3| size value}"
@@ -44,7 +46,7 @@ int main(int argc, char* argv[]) {
     int image_height = h, image_width = 256 * s;
     cv::Mat image(image_height, image_width, CV_8UC3, cv::Scalar(255, 255, 255));
 
-    int x_pos = 5, y_pos = 5;
+    int x_pos = 0, y_pos = 0;
     for (int i = 0; i < max_color; ++i) {
         cv::Scalar color(i, i, i);
         cv::Rect strip_rect(x_pos, y_pos, s, h);
@@ -59,11 +61,12 @@ int main(int argc, char* argv[]) {
 
 
     if (output_file.size()) {
-        cv::imwrite(cv::String(output_file), image);
+        std::filesystem::path full_path = executable_path / output_file;
+        cv::imwrite(full_path.string(), image);
     }
+        cv::imshow("Gradient Image", image);
+        cv::waitKey(0);
     
-    cv::imshow("Gradient Image", image);
-    cv::waitKey(0);
     cv::destroyAllWindows();
 
 }
