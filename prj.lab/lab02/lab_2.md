@@ -25,7 +25,9 @@
 
 
 ## Результат
+Итоговое изображение
 
+![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/lab_2.png)
 
 
 ## Вывод
