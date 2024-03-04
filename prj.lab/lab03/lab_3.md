@@ -26,9 +26,16 @@
 
 
 ## Результат
-Итоговое изображение
+Цветное изображение
 
-![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/lab_2.png)
+| Исходное изображение | По каналам | Общий контраст |
+|----------------------|------------|----------------|
+| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/test_color.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/color_image_each_channels.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/color_image_all_channels.png) |
+
+Серое изображение
+| Исходное изображение | Автоконтраст |
+|----------------------|--------------|
+|![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/test_gray.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/gray_image.png)
 
 
 ## Вывод
