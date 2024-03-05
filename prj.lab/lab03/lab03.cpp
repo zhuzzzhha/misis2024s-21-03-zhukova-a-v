@@ -29,36 +29,29 @@ void calcHistogramColor(const cv::Mat& image, std::vector<cv::Mat>& histograms,i
 ///////////////////////////////////////////////////////////////////////////////
 void calcHistogramGray(const cv::Mat& image, cv::Mat& histogram, int max_value = 256, int hist_size = 256)
 {
-    std::vector<cv::Mat> channels;
-
-    float range[] = { 0, 256 };
-    const float* hist_range = { range };
-    bool uniform = true;
-    bool accumulate = false;
-
-    Mat hist;
-    cv::calcHist(&channels[0], 1, 0, cv::Mat(), hist, 1, &hist_size, &hist_range, uniform, accumulate);
+    float range[] = { 0, max_value };
+    const float* hist_range[] = { range };
+    int channels[] = { 0 };
+    bool uniform = true, accumulate = false;
+    calcHist(&image, 1, channels, Mat(), histogram, 1, &hist_size, hist_range);
 
 }
 ///////////////////////////////////////////////////////////////////////////////
-void normalizeHistogram(cv::Mat histogram, float percentile)
+void makeVconcat(std::vector<Mat>& images)
 {
-    //size_t total_pixels = std::accumulate(histogram, histogram, 0);
-    //size_t leftIndex = 0;
-    //size_t rightIndex = hist.size() - 1;
-    //size_t count = 0;
-    //int leftThreshold = 0.05 * totalPixels; // 5% от общего числа пикселей
-    //int rightThreshold = 0.95 * totalPixels; // 95% от общего числа пикселей
+    for (int i = 1; i < images.size(); i++)
+    {
+        cv::vconcat(images[0], images[i], images[0]);
+    }
 }
-///////////////////////////////////////////////////////////////////////////////
-
-void calculateBlackQuantile(cv::Mat histogram, int& black_quantile, int& white_quantile, double quantile, int hist_size, int total_pixels_count)
+///////////////////////////////////////////////////////////////////////////////////////
+void calculateQuantile(cv::Mat histogram, int& black_quantile, int& white_quantile, double quantile, int hist_size, int total_pixels_count)
 {
     double cumulative_sum = 0;
     black_quantile = 0;
     for (int i = 0; i < hist_size; ++i) {
         cumulative_sum += histogram.at<float>(i);   
-        if (cumulative_sum / total_pixels_count >= (1-quantile)) {
+        if (cumulative_sum / total_pixels_count >= (quantile)) {
             black_quantile = i;
             break;
         }
@@ -67,7 +60,7 @@ void calculateBlackQuantile(cv::Mat histogram, int& black_quantile, int& white_q
      white_quantile = 0;
        for (int i = hist_size - 2; i >= 0; --i) {
         cumulative_sum += histogram.at<float>(i);
-        if (cumulative_sum / total_pixels_count >= (1 - quantile)) {
+        if (cumulative_sum / total_pixels_count >= (quantile)) {
             white_quantile = i;
             break;
         }
@@ -95,7 +88,8 @@ int calculateAutocontrast(int c_low, int c_high, int black_quantile, int white_q
     else if (current_value >= white_quantile)
         current_value = white_quantile;
     else
-        current_value = black_quantile + (current_value - c_low) * (white_quantile - black_quantile) / (c_high - c_low);
+        //current_value = black_quantile + (current_value - c_low) * (white_quantile - black_quantile) / (c_high - c_low);
+        current_value = c_low + (current_value - black_quantile) * (c_high - c_low) / (white_quantile - black_quantile);
     return current_value;
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -116,13 +110,57 @@ void autoContrastForEachChannel(std::vector<double> c_low, std::vector<double> c
         }
     }
 }
+///////////////////////////////////////////////////////////////////////////////
+void autoContrastForGray(double c_low, double c_high, int black_quantile, int white_quantile, Mat& image)
+{
+
+    for (int i = 0; i < image.rows; i++) 
+    {
+        uchar* ptr = image.ptr<uchar>(i);
+        for (int j = 0; j < image.cols; j++)
+        {
+            int gray_value = calculateAutocontrast(c_low, c_high, black_quantile, white_quantile, ptr[j]);
+            image.at<uchar>(i, j) = static_cast<uchar>(gray_value);
+        }
+    }
+}
+///////////////////////////////////////////////////////////////////////////////
+void autoContrastForAllChannels(std::vector<double> c_low, std::vector<double> c_high, std::map<std::string, int> black_quantiles, std::map<std::string, int> white_quantiles, Mat& image)
+{
+    int black_quantile = 0;
+    for (auto& [color, value] : black_quantiles)
+        black_quantile = std::max(value, black_quantile);
+
+    int white_quantile = 0;
+    for (auto& [color, value] : white_quantiles)
+        white_quantile = std::max(value, white_quantile);
+
+    for (int i = 0; i < image.rows; i++)
+    {
+        cv::Vec3b* ptr = image.ptr<cv::Vec3b>(i);
+        for (int j = 0; j < image.cols; j++)
+        {
+            ptr[j] = cv::Vec3b(ptr[j][2], ptr[j][1], ptr[j][0]);
+
+            int blue_value = calculateAutocontrast(c_low[2], c_high[2], black_quantile, white_quantile, ptr[j][2]);
+            int green_value = calculateAutocontrast(c_low[1], c_high[1], black_quantile, white_quantile, ptr[j][1]);
+            int red_value = calculateAutocontrast(c_low[0], c_high[0], black_quantile, white_quantile, ptr[j][0]);
+            image.at<cv::Vec3b>(i, j) = cv::Vec3b(blue_value, green_value, red_value);
+        }
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
-int main()
+int main(int argc, char* argv[])
 {
-    int black_quantile, white_quantile;
+    int black_quantile_gray, white_quantile_gray;
     int c_low, c_high;
-    float quantile = 0.7;
+    double quantile = 0.05;
+
+    cv::CommandLineParser parser(argc, argv,
+        "{q         | 0.05| quantile}");
+
+    quantile = parser.get<double>("q");
     std::map<std::string, int> black_quantiles = {
         {"blue",0},
         {"green", 0},
@@ -132,17 +170,17 @@ int main()
         {"green", 255},
         {"red", 255 } };
 
-    //чтение изображений
+    //С‡С‚РµРЅРёРµ РёР·РѕР±СЂР°Р¶РµРЅРёР№
     std::filesystem::path executable_path = std::filesystem::current_path();
     std::string color_image_path = "\\test_color.png";
     color_image_path = executable_path.string() + color_image_path;
     
 
     std::string gray_image_path = "\\test_gray.png";
-    gray_image_path = executable_path.string() + color_image_path;
+    gray_image_path = executable_path.string() + gray_image_path;
 
 
-    //вычисляем диапазон для цветного изображения
+    //РІС‹С‡РёСЃР»СЏРµРј РґРёР°РїР°Р·РѕРЅ РґР»СЏ С†РІРµС‚РЅРѕРіРѕ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ
     cv::Mat color_image = cv::imread(color_image_path, cv::IMREAD_COLOR);
     std::vector<cv::Mat> channels;
     cv::split(color_image, channels);
@@ -159,22 +197,43 @@ int main()
     double min_val_gray, max_val_gray;
     minMaxLoc(gray_image, &min_val_gray, &max_val_gray);
 
-    //вычисляем гистограмму
+    //РІС‹С‡РёСЃР»СЏРµРј РіРёСЃС‚РѕРіСЂР°РјРјСѓ
     std::vector<cv::Mat> histograms_color;
     calcHistogramColor(color_image, histograms_color, total_max, total_max);
 
     Mat histogram_gray;
-//    calcHistogramGray(gray_image, histogram_gray, max_val_gray, max_val_gray);
+    calcHistogramGray(gray_image, histogram_gray, max_val_gray, max_val_gray);
+    calculateQuantile(histogram_gray, black_quantile_gray, white_quantile_gray, quantile, max_val_gray, gray_image.cols * gray_image.rows);
 
-    //вычисляем квантили
-    calculateBlackQuantile(histograms_color[0], black_quantiles["blue"], white_quantiles["blue"], quantile, 256, color_image.cols * color_image.rows);
-    calculateBlackQuantile(histograms_color[1], black_quantiles["green"], white_quantiles["green"], quantile, 256, color_image.cols * color_image.rows);
-    calculateBlackQuantile(histograms_color[2], black_quantiles["red"], white_quantiles["red"], quantile, 256, color_image.cols * color_image.rows);
+    //РІС‹С‡РёСЃР»СЏРµРј РєРІР°РЅС‚РёР»Рё
+    calculateQuantile(histograms_color[0], black_quantiles["blue"], white_quantiles["blue"], quantile, 256, color_image.cols * color_image.rows);
+    calculateQuantile(histograms_color[1], black_quantiles["green"], white_quantiles["green"], quantile, 256, color_image.cols * color_image.rows);
+    calculateQuantile(histograms_color[2], black_quantiles["red"], white_quantiles["red"], quantile, 256, color_image.cols * color_image.rows);
 
-    //поканально контрастируем
-    autoContrastForEachChannel(min_color_values, max_color_values, black_quantiles, white_quantiles, color_image);
+    //РїРѕРєР°РЅР°Р»СЊРЅРѕ РєРѕРЅС‚СЂР°СЃС‚РёСЂСѓРµРј
+    cv::Mat contrast_each_cahnnels_color_image;
+    cv::Mat contrast_all_cahnnels_color_image;
+    contrast_each_cahnnels_color_image = color_image.clone();
+    contrast_all_cahnnels_color_image = color_image.clone();
 
-    cv::imshow("Image", color_image);
+    autoContrastForEachChannel(min_color_values, max_color_values, black_quantiles, white_quantiles, contrast_each_cahnnels_color_image);
+    autoContrastForAllChannels(min_color_values, max_color_values, black_quantiles, white_quantiles, contrast_all_cahnnels_color_image);
+    autoContrastForGray(min_val_gray, max_val_gray, black_quantile_gray, white_quantile_gray, gray_image);
+
+    //std::vector<Mat> images = { contrast_all_cahnnels_color_image, contrast_each_cahnnels_color_image };
+    //makeVconcat(images);
+
+    std::string output_file_gray = "gray_image.png";
+    std::string output_file_color_all_channels = "color_image_all_channels.png";
+    std::string output_file_color_each_channels = "color_image_each_channels.png";
+    std::filesystem::path output_file_gray_full = executable_path / output_file_gray;
+    std::filesystem::path output_file_color_all = executable_path / output_file_color_all_channels;
+    std::filesystem::path output_file_color_each = executable_path / output_file_color_each_channels;
+
+    imwrite(output_file_color_all.string(), contrast_all_cahnnels_color_image);
+    imwrite(output_file_color_each.string(), contrast_each_cahnnels_color_image);
+    imwrite(output_file_gray_full.string(), gray_image);
+    cv::imshow("Image", gray_image);
     cv::waitKey(0);
     cv::destroyAllWindows();
 }
