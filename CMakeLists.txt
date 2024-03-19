@@ -5,6 +5,7 @@ project(zhukova-a-v)
 
 set(VCPKG_ROOT "C:/Users/ALLA/vcpkg")
 set(VCPKG_INSTALLED_DIR "C:/Users/ALLA/vcpkg/installed")
+set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 list(APPEND CMAKE_PREFIX_PATH "${VCPKG_ROOT}/installed")
@@ -24,8 +25,8 @@ set(quirc_DIR "${VCPKG_ROOT}/installed/x64-windows/share/quirc")
 set(TIFF_INCLUDE_DIR "${VCPKG_ROOT}/installed/x64-windows/include/tiff")
 set(TIFF_LIBRARY "${VCPKG_ROOT}/installed/x64-windows/lib/tiff")
 
-find_package(OpenCV CONFIG REQUIRED)
-
+find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui)
+include_directories("${VCPKG_ROOT}/installed/x64-windows/include" "${VCPKG_ROOT}/buildtrees")
 add_subdirectory(prj.lab)
 #add_subdirectory(prj.cw)
 
