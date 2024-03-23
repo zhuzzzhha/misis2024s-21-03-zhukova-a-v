@@ -3,6 +3,9 @@
 ## Введение
 Цель работы - реализовать автоконтрастирование по квантилям черного и белого, для серых и цветных изображений.
 
+Контрастирование может повысить видимость деталей на изображении, делая его более четким. Например, автоконтраст используют операторы ГИС при первичной ручной обработке космического снимка. На снимке, приведенном ниже, представлена территория провинции Рио-Негро, Аргентина. На исходном снимке водные объекты можно спутать с тенью горных склонов. Автоконтраст по каждому каналу делает водные объекты и склоны визуально различимыми.
+
+
 ## Реализация
 
 ### Подсчет гистограмм
@@ -26,8 +29,13 @@
 
 
 ## Результат
-Цветное изображение - значение квантиля 0.15
 
+| Исходное изображение | По каналам | Общий контраст |
+|----------------------|------------|----------------|
+| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/build/prj.lab/lab03/space_image.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/build/prj.lab/lab03/space_color_image_each_channels.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/build/prj.lab/lab03/space_color_image_all_channels.png) |
+
+
+Цветное изображение - значение квантиля 0.15
 | Исходное изображение | По каналам | Общий контраст |
 |----------------------|------------|----------------|
 | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/test_color.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/color_image_each_channels.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/color_image_all_channels.png) |
