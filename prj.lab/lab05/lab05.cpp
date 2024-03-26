@@ -68,16 +68,7 @@ int main()
 	Mat result_image;
 	vector<Mat> images;
 
-	/*for (int i = 0; i < brightness.size(); i++)
-	{
-
-		for (int j = i + 1; j < brightness.size(); j++)
-		{
-			auto image = makeImage(brightness[i], brightness[j]);
-			images.push_back(image);
-		}
-		
-	}*/
+	
 	auto init_image = makeImage(brightness[0], brightness[1]);
 	auto image = makeImage(brightness[0], brightness[2]);
 	cv::hconcat(init_image, image, init_image);
@@ -86,7 +77,7 @@ int main()
 	cv::hconcat(init_image, image, init_image);
 
 	auto init_image_2 = makeImage(brightness[1], brightness[2]);
-	image = makeImage(brightness[2], brightness[0]);
+	image = makeImage(brightness[2], brightness[0]);		
 	cv::hconcat(init_image_2, image, init_image_2);
 
 	image = makeImage(brightness[2], brightness[1]);
@@ -105,16 +96,35 @@ int main()
 	Mat I_1 = applyConvolution(init_image, kernel_1);
 	Mat I_2 = applyConvolution(init_image, kernel_2);
 
+	double minVal, maxVal;
+	cv::minMaxLoc(I_1, &minVal, &maxVal);
+	cv::minMaxLoc(I_2, &minVal, &maxVal);
+
+	I_1 = (I_1 - minVal) * (255.0 / (maxVal - minVal));
+	I_2 = (I_2 - minVal) * (255.0 / (maxVal - minVal));
+
+	// Преобразуем тип обратно в CV_8U (unsigned char)
+	//I_1.convertTo(I_1, CV_8U);
+	//I_2.convertTo(I_2, CV_8U);
+
+
 	Mat I_3 = calculateSquare(I_1, I_2);
 
 	Mat mergedImage = mergeChannels(I_1, I_2, I_3);
 
 
 	imshow("Image_1", I_1);
+	imwrite("Image_1.png", I_1);
+
 	imshow("Image_2", I_2);
+	imwrite("Image_2.png", I_2);
+
 	imshow("Image_3", I_3);
+	imwrite("Image_3.png", I_3);
+
 	imshow("Result image", mergedImage);
-	imwrite("merged.png", init_image);
+	imwrite("merged.png", mergedImage);
+
 	waitKey(0);
 	destroyAllWindows();
 
