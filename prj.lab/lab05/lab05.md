@@ -24,11 +24,11 @@
 
 | Исходное изображение | I_1 | I_2 |I_3 |Результат merge|
 |----------------------|-----|-----|----|---------------|
-| ![]() | ![]() | ![]() | ![]() | ![]() | ![]() | ![]() |
+| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/result.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/Image_1.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/Image_2.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/Image_3.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/merged.png)|
 
 
 
 
 
 ## Вывод
-Положительную производную отражает значение 0, отрицательную - 255. 
+Положительную производную отражает значение 0, отрицательную - 255. Переход с одного уровня яркости на другой изображен в виде полуокружностей разных яркостей. При этом с помощью разных фильтров мы получили производные по разным направлениям. Результирующее изображение представляет собой окружности, имеющие разные оттенки.
