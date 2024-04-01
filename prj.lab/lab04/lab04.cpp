@@ -3,6 +3,9 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
 #include <iostream>
+#include <fstream>
+#include <optional>
+#include <vector>
 #include <random>
 
 #include "opencv2/imgcodecs.hpp"
@@ -18,7 +21,33 @@
 #include <opencv2/imgproc.hpp>
 #include "opencv2/features2d.hpp"
 
+
+#define GENERATE_FILENAME(name, kernel_size) (name + std::to_string(kernel_size) + ".png")
+#define GENERATE_JSONNAME(name, kernel_size) (name + std::to_string(kernel_size) + ".json")
 ///////////////////////////////////////////////////////////////////////////////////////
+
+struct Circle
+{
+    double x;
+    double y;
+    double r;
+    int brightness;
+};
+///////////////////////////////////////////////////////////////////////////////////////
+static int num_file = 1;
+///////////////////////////////////////////////////////////////////////////////////////
+struct Statistics
+{
+    std::vector<Circle> circles;
+    int image_width;
+    int image_height;
+    int background_color;
+    int blur;
+    double noise;
+};
+
+///////////////////////////////////////////////////////////////////////////////////////
+
 using namespace cv;
 using std::cout;
 
@@ -50,12 +79,52 @@ const int threshold_slider_max = 200;
 int threshold_slider = 0;
 double threshold_value = 0;
 
+const int blur_slider_max = 20;
+int blur_slider = 0;
+int blur_value = 2;
+
 double beta;
 Mat src1;
 Mat src2;
 Mat init_image;
 Mat binary_image;
+Mat detected_blobs;
+Mat detected_circles;
 
+///////////////////////////////////////////////////////////////////////////////////////
+struct ImageWithStats {
+    cv::Mat image;
+    std::optional<Statistics> stats;
+};
+///////////////////////////////////////////////////////////////////////////////////////
+void writeInJSON(const std::string& filename, Statistics& stats)
+{
+    std::ostringstream jsonStream;
+    jsonStream << "{";
+    jsonStream << "\"background\":{";
+    jsonStream << "\"size\":[" << stats.image_width << "," << stats.image_height << "],";
+    jsonStream << "\"color\":"<< stats.background_color<<",";
+    jsonStream << "\"noise\":" << stats.noise << ",";
+    jsonStream << "\"blur\":" << stats.blur;
+    jsonStream << "},";
+    jsonStream << "\"objects\":[";
+
+    for (size_t i = 0; i < stats.circles.size(); ++i) {
+        jsonStream << "{";
+        jsonStream << "\"c\":" << stats.circles[i].brightness << ",";
+        jsonStream << "\"p\":[" << (stats.circles[i].x) << "," << (stats.circles[i].y) << "," << (stats.circles[i].r);
+        jsonStream << "]}";
+        if (i != stats.circles.size() - 1)
+            jsonStream << ",";
+    }
+    jsonStream << "]";
+    jsonStream << "}";
+
+    std::ofstream output_file(filename);
+
+    output_file << jsonStream.str();
+    output_file.close();
+}
 ///////////////////////////////////////////////////////////////////////////////////////
 cv::Mat addGaussianNoise(cv::Mat image, double std)
 {
@@ -77,29 +146,55 @@ cv::Mat addGaussianNoise(cv::Mat image, double std)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
-cv::Mat generateImageWithCircles(int count, int min_radius, int max_radius, int min_contrast, int max_contrast, double std) {
+ImageWithStats generateImageWithCircles(int count, int min_radius, int max_radius, int min_contrast, int max_contrast, double std, int blur, bool bSave) {
     cv::Mat image(max_radius * 2 * (count + 1), max_radius * 2 * (count + 1), CV_8UC1, cv::Scalar(0, 0, 0));
     int grid_spacing = max_radius * 2;
     int step = (max_radius - min_radius) / count;
     cv::Scalar color(min_contrast, min_contrast, min_contrast);
     int step_color = (max_contrast - min_contrast) / count;
 
+    Statistics stats;
+
     for (int i = 0; i < count; ++i) {
         for (int j = 0; j < count; ++j) {
 
+            
             cv::Point center((j + 1) * grid_spacing, (i + 1) * grid_spacing);
             cv::Scalar color(min_contrast + step_color * j, min_contrast + step_color * j, min_contrast + step_color * j);
             cv::circle(image, center, min_radius + step * i, color, -1);
+            
+            Circle circle;
+            circle.x = (j + 1) * grid_spacing;
+            circle.y = (i + 1) * grid_spacing;
+            circle.r = min_radius + step * i;
+            circle.brightness = min_contrast + step_color * j;
+
+            stats.circles.push_back(circle);
         }
+        
     }
+    stats.background_color = 0;
+    stats.image_width = max_radius * 2 * (count + 1);
+    stats.image_height = max_radius * 2 * (count + 1);
+    stats.noise = std;
+    stats.blur = blur;
 
     Mat new_image = addGaussianNoise(image, std) + image;
-    imwrite("result.png", new_image);
-    return new_image;
+    cv::blur(new_image, new_image, cv::Size(blur, blur));
+    ImageWithStats stats_img;
+    stats_img.image = new_image;
+    stats_img.stats = stats;
+    if (bSave)
+    {
+        imwrite(GENERATE_FILENAME("generated_image_", num_file), new_image);
+        num_file += 1;
+        
+    }
+    
+    
+    return stats_img;
 }
-
 ////////////////////////////////////////////////////////////////////////////////
-
 cv::Mat makeAdaptiveBinarization(Mat image, double max_value)
 {
     Mat binary_image;
@@ -109,152 +204,200 @@ cv::Mat makeAdaptiveBinarization(Mat image, double max_value)
 
 }
 ////////////////////////////////////////////////////////////////////////////////
+Mat connectedComponentsDetection(Mat image) {
+    Mat labels;
+    int num_objects = connectedComponents(image, labels);
+
+    Mat colored_labels;
+    cvtColor(image, colored_labels, COLOR_GRAY2BGR);
+
+    for (int i = 1; i < num_objects; i++) {
+        Mat component_mask = (labels == i);
+        Vec3b color(255, 255, 255);
+        colored_labels.setTo(color, component_mask);
+    }
+    cvtColor(image, colored_labels, COLOR_GRAY2BGR);
+    return colored_labels;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Mat LoG(Mat detected_blobs)
+{
+    Mat  dst;
+    int kernel_size = 9;
+    int scale = 1;
+    int delta = 0;
+    int ddepth = CV_16S;
+  
+    GaussianBlur(detected_blobs, detected_blobs, Size(kernel_size, kernel_size), 0, 0, BORDER_DEFAULT);
+    imwrite(GENERATE_FILENAME("gau_", kernel_size), detected_blobs);
+    Laplacian(detected_blobs, dst, ddepth, kernel_size, scale, delta, BORDER_DEFAULT);
+
+    double minVal, maxVal;
+    cv::Point minLoc, maxLoc;
+    cv::minMaxLoc(dst, &minVal, &maxVal, &minLoc, &maxLoc);
+    dst = (dst - minVal) * (255.0 / (maxVal - minVal)); 
+    //dst.convertTo(dst,CV_8U);
+
+    
+   /* for (int y = 0; y < dst.rows; ++y) {
+        for (int x = 0; x < dst.cols; ++x) {
+            int brightness = dst.at<char>(y, x);
+
+            if (brightness == 0) {
+                cv::circle(dst, cv::Point(x, y), kernel_size, cv::Scalar(0, 0, 255), 1);
+            }
+        }
+    }*/
+    imwrite(GENERATE_FILENAME("gau_", kernel_size), dst);
+    return dst;
+    }
+////////////////////////////////////////////////////////////////////////////////
+cv::Mat createMaskForBlackPixels(const cv::Mat& inputImage) {
+    
+    cv::Mat new_img;
+    inputImage.convertTo(new_img,CV_8U);
+    cv::Mat mask(new_img.size(), CV_8U, cv::Scalar(0));
+
+    for (int y = 0; y < new_img.rows; ++y) {
+        for (int x = 0; x < new_img.cols; ++x) {
+            int brightness = new_img.at<uchar>(y, x);
+
+            if (brightness >= 0 && brightness<=50) {
+                mask.at<uchar>(y, x) = 255;
+            }
+        }
+    }
+    imwrite("mask.png",mask);
+    return mask;
+}
+////////////////////////////////////////////////////////////////////////////////
+
 static void on_count_trackbar(int, void*)
 {
     count = std::max(count_slider,1);
-    init_image = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value);
-    imshow("Image", init_image);
+    ImageWithStats img = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
+    imshow("Initial image", img.image);
+
+    /*binary_image = makeAdaptiveBinarization(init_image, threshold_value);
+    imshow("Binary Image", binary_image);
+
+    detected_blobs = connectedComponentsDetection(binary_image);
+    imshow("Detected blobs", detected_blobs);*/
+
+    detected_circles = LoG(img.image);
+    imshow("Detected circles", detected_circles);
 }
 ////////////////////////////////////////////////////////////////////////////////
 static void on_min_radius_trackbar(int, void*)
 {
     min_radius = std::max(min_radius_slider, 1);
-    init_image = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value);
-    imshow("Image", init_image);
+    ImageWithStats img = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
+    imshow("Initial image", img.image);
+
+   /* binary_image = makeAdaptiveBinarization(init_image, thre  shold_value);
+    imshow("Binary Image", binary_image);
+
+    detected_blobs = connectedComponentsDetection(binary_image);
+    imshow("Detected blobs", detected_blobs);*/
+
+    detected_circles = LoG(img.image);
+    imshow("Detected circles", detected_circles);
 }
 ////////////////////////////////////////////////////////////////////////////////
 static void on_max_radius_trackbar(int, void*)
 {
     max_radius = std::max(max_radius_slider, 1);
-    init_image = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value);
-    imshow("Image", init_image);
+    ImageWithStats img = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
+    imshow("Initial image", img.image);
+
+    /*binary_image = makeAdaptiveBinarization(init_image, threshold_value);
+    imshow("Binary Image", binary_image);
+
+    detected_blobs = connectedComponentsDetection(init_image);
+    imshow("Detected blobs", detected_blobs);*/
+
+    detected_circles = LoG(img.image);
+    imshow("Detected circles", detected_circles);
 }
 ////////////////////////////////////////////////////////////////////////////////
 static void on_max_contrast_trackbar(int, void*)
 {
     max_contrast = std::max(max_contrast_slider, 1);
-    init_image = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value);
-    imshow("Image", init_image);
+    ImageWithStats img = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
+    imshow("Initial image", img.image);
+
+    /*binary_image = makeAdaptiveBinarization(init_image, threshold_value);
+    imshow("Binary Image", binary_image);
+
+    detected_blobs = connectedComponentsDetection(init_image);
+    imshow("Detected blobs", detected_blobs);*/
+
+    detected_circles = LoG(img.image);
+    imshow("Detected circles", detected_circles);
 }
 ////////////////////////////////////////////////////////////////////////////////
 static void on_min_contrast_trackbar(int, void*)
 {
     min_contrast = std::max(min_contrast_slider, 1);
-    init_image = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value);
-    imshow("Image", init_image);
+    ImageWithStats img = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
+    imshow("Initial image", img.image);
+
+   /* binary_image = makeAdaptiveBinarization(init_image, threshold_value);
+    imshow("Binary Image", binary_image);
+
+    detected_blobs = connectedComponentsDetection(init_image);
+    imshow("Detected blobs", detected_blobs);*/
+
+    detected_circles = LoG(img.image);
+    imshow("Detected circles", detected_circles);
 }
 ////////////////////////////////////////////////////////////////////////////////
-static void on_std_slider(int, void*)
+static void on_std_trackbar(int, void*)
 {
     std_value = std::max(std_slider, 1);
-    init_image = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value);
-    imshow("Image", init_image);
-}
-////////////////////////////////////////////////////////////////////////////////
-static void on_threshold_slider(int, void*)
-{
-    threshold_value = std::max(threshold_slider, 1);
-    binary_image = makeAdaptiveBinarization(init_image, threshold_value);
+    ImageWithStats img = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
+    imshow("Initial image", img.image);
+
+    /*binary_image = makeAdaptiveBinarization(init_image, threshold_value);
     imshow("Binary Image", binary_image);
-}
 
-////////////////////////////////////////////////////////////////////////////////
-int cv::connectedComponentsWithStats(InputArray img_, OutputArray _labels, OutputArray statsv,
-    OutputArray centroids, int connectivity, int ltype)
-{
-    return cv::connectedComponentsWithStats(img_, _labels, statsv, centroids, connectivity, ltype, CCL_DEFAULT);
-}
+    detected_blobs = connectedComponentsDetection(init_image);
+    imshow("Detected blobs", detected_blobs);*/
 
-////////////////////////////////////////////////////////////////////////////////
-int makeDetection(cv::Mat image)
-{
-    Mat labeledImage;
-    int numLabels = connectedComponents(image, labeledImage);
-    return numLabels;
+    detected_circles = LoG(img.image);
+    imshow("Detected circles", detected_circles);
 }
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<KeyPoint> makeBlobDetection(Mat img)
-{
-    Mat image;
-    img.convertTo(image, CV_8UC1);
-
-    SimpleBlobDetector::Params params;
-
-    // Change thresholds
-    params.minThreshold = 10;
-    params.maxThreshold = 200;
-
-    // Filter by Area.
-    params.filterByArea = true;
-    params.minArea = 1500;
-
-
-    // Storage for blobs
-    std::vector<KeyPoint> keypoints;
-
-
-#if CV_MAJOR_VERSION < 3   // If you are using OpenCV 2
-
-    // Set up detector with params
-    SimpleBlobDetector detector(params);
-
-    // Detect blobs
-    detector.detect(im, keypoints);
-#else 
-
-    // Set up detector with params
-    Ptr<SimpleBlobDetector> detector = SimpleBlobDetector::create(params);
-
-    // Detect blobs
-    detector->detect(image, keypoints);
-#endif 
-
-    // Draw detected blobs as red circles.
-    // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures
-    // the size of the circle corresponds to the size of blob
-    return keypoints;
-    
-}
-////////////////////////////////////////////////////////////////////////////////
-cv::Mat divideIntoConnectedComponents(cv::Mat img)
-{
-    cv::Mat image;
-    img.convertTo(image, CV_8S);
-
-    cv::Mat labelImage(image.size(), CV_8S);
-    int nLabels = connectedComponents(labelImage, image, 8);
-
-    std::vector<cv::Vec3b> colors;
-    colors.push_back(cv::Vec3b(0, 0, 0));//background
-
-    for (int label = 1; label < nLabels; ++label)
-    {
-        colors.push_back(cv::Vec3b((rand() & 255), (rand() & 255), (rand() & 255)));
-    }
-
-    cv::Mat dst(image.size(), CV_8S);
-    for (int r = 0; r < dst.rows; ++r)
-    {
-        for (int c = 0; c < dst.cols; ++c)
-        {
-            int label = labelImage.at<int>(r, c);
-            cv::Vec3b& pixel = dst.at<cv::Vec3b>(r, c);
-            pixel = colors[label];
-        }
-    }
-    return dst;
-}
+//static void on_threshold_trackbar(int, void*)
+//{
+//    std_value = std::max(std_slider, 1);
+//    ImageWithStats img = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
+//    imshow("Initial image", img.image);
+//   /* threshold_value = std::max(threshold_slider, 1);
+//    binary_image = makeAdaptiveBinarization(init_image, threshold_value);
+//    imshow("Binary Image", binary_image);*/
+//
+//   /* detected_blobs = connectedComponentsDetection(init_image);
+//    imshow("Detected blobs", detected_blobs);*/
+//    
+//    detected_circles = LoG(img.image);
+//    imshow("Detected circles", detected_circles);
+//}
 /////////////////////////////////////////////////////////////////////////////////////////////
-cv::Mat applyLoG(const cv::Mat& inputImage, int kernelSize, double sigma) {
-    cv::Mat blurredImage;
-    cv::GaussianBlur(inputImage, blurredImage, cv::Size(kernelSize, kernelSize), sigma, sigma);
+static void on_blur_trackbar(int, void*)
+{    
+    int blur = std::max(blur_value, 1);
+    ImageWithStats img = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
+    imshow("Initial image", img.image);
+    /* binary_image = makeAdaptiveBinarization(init_image, threshold_value);
+     imshow("Binary Image", binary_image);
 
-    cv::Mat resultImage;
-    cv::Laplacian(blurredImage, resultImage, CV_32F);
+     detected_blobs = connectedComponentsDetection(binary_image);
+     imshow("Detected blobs", detected_blobs);*/
 
-    cv::normalize(resultImage, resultImage, 0, 255, cv::NORM_MINMAX, CV_8U);
-
-    return resultImage;
+    detected_circles = LoG(img.image);
+    imshow("Detected circles", detected_circles);
 }
 /////////////////////////////////////////////////////////////////////////////////////////////
 void applyThreshold(cv::Mat& src, cv::Mat& dst, double threshold, int blockSize) {
@@ -299,12 +442,13 @@ Metrics computeMetrics(const std::vector<KeyPoint>& keypoints, const Mat& ground
 /////////////////////////////////////////////////////////////////////////////////////////////
 int main(void)
 {
-    src1 = src2 =  generateImageWithCircles(5, 5, 25,0,255, std_value);
+    ImageWithStats s =  generateImageWithCircles(5, 5, 25,0,255, std_value,blur_value,false);
+    src1 = src2 = s.image;
     count_slider = 5;
     min_radius = 2;
     max_radius = 25;
-    namedWindow("Image", WINDOW_AUTOSIZE);
-    namedWindow("Binary Image", WINDOW_AUTOSIZE);
+    //namedWindow("Image", WINDOW_AUTOSIZE);
+    //namedWindow("Binary Image", WINDOW_AUTOSIZE);
     namedWindow("TrackBars", WINDOW_AUTOSIZE);
 
     char TrackbarName[50];
@@ -329,27 +473,37 @@ int main(void)
     on_min_contrast_trackbar(min_contrast_slider, 0);
 
     sprintf(TrackbarName, "Std value");
-    createTrackbar(TrackbarName, "TrackBars", &std_slider, std_slider_max, on_std_slider);
-    on_min_contrast_trackbar(min_contrast_slider, 0);
+    createTrackbar(TrackbarName, "TrackBars", &std_slider, std_slider_max, on_std_trackbar);
+    on_std_trackbar(std_slider, 0);
 
-    sprintf(TrackbarName, "Threshold");
-    createTrackbar(TrackbarName, "TrackBars", &threshold_slider, threshold_slider_max, on_threshold_slider); 
-    on_threshold_slider(threshold_slider, 0);
+    /*sprintf(TrackbarName, "Threshold");
+    createTrackbar(TrackbarName, "TrackBars", &threshold_slider, threshold_slider_max, on_threshold_trackbar); 
+    on_threshold_trackbar(threshold_slider, 0);*/
 
-    resizeWindow("Image", src1.cols, src1.rows);
+    sprintf(TrackbarName, "Blur");
+    createTrackbar(TrackbarName, "TrackBars", &blur_slider, blur_slider_max, on_blur_trackbar);
+    on_blur_trackbar(threshold_slider, 0);
 
+    cv::Mat mask = createMaskForBlackPixels(detected_circles);
 
-   
-   Mat im_with_keypoints;
-   auto keypoints = makeBlobDetection(src1);
-   Mat keypointsImage;
-   //auto metrics = computeMetrics(keypoints, src1);
+    cv::imshow("Mask", mask);
+    cv::waitKey(0);
 
-   drawKeypoints(src1, keypoints, keypointsImage, Scalar(0, 0, 255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-   auto connected_components_img = divideIntoConnectedComponents(src1);
-
-    // Show blobs
-   imshow("connected components", connected_components_img);
+    std::vector<int> counts {7,9,11,13,15};
+    std::vector<int> min_radius{5, 12, 14, 16, 20};
+    std::vector<int> max_radius{15, 25, 35, 50, 100};    
+    std::vector<int> min_contrast{15, 20, 25, 30, 40};
+    std::vector<int> max_contrast{100, 120, 140, 160, 180};
+    std::vector<double> std{10,50,100,120,150};
+    std::vector<int> blur{2, 2, 4, 4, 6};
+    for (int i = 0; i < 5; i++)
+    {
+        ImageWithStats cur_stat = generateImageWithCircles(counts[i], min_radius[i], max_radius[i], min_contrast[i], max_contrast[i], std[i], blur[i], true);
+        cv::imwrite(GENERATE_FILENAME("generated_image_", i), cur_stat.image);
+        if(cur_stat.stats.has_value())
+            writeInJSON(GENERATE_JSONNAME("parameters_", i), cur_stat.stats.value());
+    }
+ 
     waitKey(0);
     return 0;
 }
