@@ -90,6 +90,7 @@ Mat init_image;
 Mat binary_image;
 Mat detected_blobs;
 Mat detected_circles;
+Mat mask;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 struct ImageWithStats {
@@ -224,7 +225,7 @@ Mat connectedComponentsDetection(Mat image) {
 Mat LoG(Mat detected_blobs)
 {
     Mat  dst;
-    int kernel_size = 9;
+    int kernel_size = 7;
     int scale = 1;
     int delta = 0;
     int ddepth = CV_16S;
@@ -253,7 +254,7 @@ Mat LoG(Mat detected_blobs)
     return dst;
     }
 ////////////////////////////////////////////////////////////////////////////////
-cv::Mat createMaskForBlackPixels(const cv::Mat& inputImage) {
+cv::Mat createMaskForBlackPixels(const cv::Mat& inputImage, int kernel_size) {
     
     cv::Mat new_img;
     inputImage.convertTo(new_img,CV_8U);
@@ -263,8 +264,8 @@ cv::Mat createMaskForBlackPixels(const cv::Mat& inputImage) {
         for (int x = 0; x < new_img.cols; ++x) {
             int brightness = new_img.at<uchar>(y, x);
 
-            if (brightness >= 0 && brightness<=50) {
-                mask.at<uchar>(y, x) = 255;
+            if (brightness >= 0 && brightness<=5) {
+                cv::circle(mask, cv::Point(x, y), kernel_size, cv::Scalar(255, 255, 255),1);
             }
         }
     }
@@ -287,6 +288,9 @@ static void on_count_trackbar(int, void*)
 
     detected_circles = LoG(img.image);
     imshow("Detected circles", detected_circles);
+
+    mask = createMaskForBlackPixels(detected_circles, 7);
+    imshow("Mask", mask);
 }
 ////////////////////////////////////////////////////////////////////////////////
 static void on_min_radius_trackbar(int, void*)
@@ -303,6 +307,8 @@ static void on_min_radius_trackbar(int, void*)
 
     detected_circles = LoG(img.image);
     imshow("Detected circles", detected_circles);
+    mask = createMaskForBlackPixels(detected_circles, 7);
+    imshow("Mask", mask);
 }
 ////////////////////////////////////////////////////////////////////////////////
 static void on_max_radius_trackbar(int, void*)
@@ -319,6 +325,8 @@ static void on_max_radius_trackbar(int, void*)
 
     detected_circles = LoG(img.image);
     imshow("Detected circles", detected_circles);
+    mask = createMaskForBlackPixels(detected_circles, 7);
+    imshow("Mask", mask);
 }
 ////////////////////////////////////////////////////////////////////////////////
 static void on_max_contrast_trackbar(int, void*)
@@ -335,6 +343,8 @@ static void on_max_contrast_trackbar(int, void*)
 
     detected_circles = LoG(img.image);
     imshow("Detected circles", detected_circles);
+    mask = createMaskForBlackPixels(detected_circles, 7);
+    imshow("Mask", mask);
 }
 ////////////////////////////////////////////////////////////////////////////////
 static void on_min_contrast_trackbar(int, void*)
@@ -351,6 +361,8 @@ static void on_min_contrast_trackbar(int, void*)
 
     detected_circles = LoG(img.image);
     imshow("Detected circles", detected_circles);
+    mask = createMaskForBlackPixels(detected_circles, 7);
+    imshow("Mask", mask);
 }
 ////////////////////////////////////////////////////////////////////////////////
 static void on_std_trackbar(int, void*)
@@ -367,6 +379,8 @@ static void on_std_trackbar(int, void*)
 
     detected_circles = LoG(img.image);
     imshow("Detected circles", detected_circles);
+    mask = createMaskForBlackPixels(detected_circles, 7);
+    imshow("Mask", mask);
 }
 ////////////////////////////////////////////////////////////////////////////////
 //static void on_threshold_trackbar(int, void*)
@@ -398,6 +412,10 @@ static void on_blur_trackbar(int, void*)
 
     detected_circles = LoG(img.image);
     imshow("Detected circles", detected_circles);
+
+    mask = createMaskForBlackPixels(detected_circles, 7);
+    imshow("Mask", mask);
+
 }
 /////////////////////////////////////////////////////////////////////////////////////////////
 void applyThreshold(cv::Mat& src, cv::Mat& dst, double threshold, int blockSize) {
@@ -407,38 +425,56 @@ void applyThreshold(cv::Mat& src, cv::Mat& dst, double threshold, int blockSize)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////
 struct Metrics {
-    int TP;
-    int TN;
-    int FP;
-    int FN;
+    int TP = 0;
+    int TN = 0;
+    int FP = 0;
+    int FN = 0;
 };
 /////////////////////////////////////////////////////////////////////////////////////////////
-Metrics computeMetrics(const std::vector<KeyPoint>& keypoints, const Mat& groundTruth) {
-    groundTruth.convertTo(groundTruth,CV_8UC1);
-    Metrics metrics = { 0, 0, 0, 0 };
+double calculateIoU(const cv::Mat& mask, const Circle& groundTruth) {
+    cv::Mat binaryMask;
+    cv::threshold(mask, binaryMask, 0, 1, cv::THRESH_BINARY);
 
-    for (const KeyPoint& kp : keypoints) {
-        Point pt = kp.pt;
+    // Создаем круговую маску для ground truth
+    cv::Mat circleMask = cv::Mat::zeros(mask.size(), CV_8U);
+    cv::circle(circleMask, cv::Point(groundTruth.x, groundTruth.y), groundTruth.r, cv::Scalar(255), 1);
 
-        uchar gtPixel = groundTruth.at<uchar>(pt);
+    double intersection = cv::countNonZero(binaryMask & circleMask);
+    double unionAreaValue = cv::countNonZero(binaryMask) + cv::countNonZero(circleMask) - intersection;
 
-        if (gtPixel == 255) {
-            metrics.TP++;
-        }
-        else {
-            metrics.FP++;
-        }
-    }
-
-    int totalPixels = groundTruth.rows * groundTruth.cols;
-
-    // Вычисление FN и TN
-    metrics.FN = totalPixels - metrics.TP;
-    metrics.TN = 0;
-
-    return metrics;
+    double iou = intersection / unionAreaValue;
+    return iou;
 }
+/////////////////////////////////////////////////////////////////////////////////////////////
+Metrics calculateMetrics(std::vector<double> iou) {
+    double threshold_low = 20;
+    Metrics current_metric;
+    for (double metric : iou)
+    {
+        if (threshold_low <= metric)
+            current_metric.TP++;
+        else if (metric >= 0)
+            current_metric.FN++;
+        else
+            current_metric.FP++;
+    }
+    return current_metric;
+}
+/////////////////////////////////////////////////////////////////////////////////////////////
+void evaluateQuality()
+{
+   ImageWithStats eval_image = generateImageWithCircles(count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
+   Mat  cur_mask = createMaskForBlackPixels(detected_circles, 7);
 
+   std::vector<double> iou;
+   for (int i = 0; i < eval_image.stats.value().circles.size(); i++)
+   {
+       double cur_iou = calculateIoU(cur_mask, eval_image.stats.value().circles[i]);
+       iou.push_back(cur_iou);
+   }
+   Metrics final_metric = calculateMetrics(iou);
+   cout << "TP: " << final_metric.FP << std::endl << "FP:" << final_metric.FP<< std::endl << "FN: " << final_metric.FN;
+}
 /////////////////////////////////////////////////////////////////////////////////////////////
 int main(void)
 {
@@ -484,7 +520,9 @@ int main(void)
     createTrackbar(TrackbarName, "TrackBars", &blur_slider, blur_slider_max, on_blur_trackbar);
     on_blur_trackbar(threshold_slider, 0);
 
-    cv::Mat mask = createMaskForBlackPixels(detected_circles);
+    evaluateQuality();
+
+    cv::Mat mask = createMaskForBlackPixels(detected_circles, 7);
 
     cv::imshow("Mask", mask);
     cv::waitKey(0);
@@ -503,6 +541,7 @@ int main(void)
         if(cur_stat.stats.has_value())
             writeInJSON(GENERATE_JSONNAME("parameters_", i), cur_stat.stats.value());
     }
+   
  
     waitKey(0);
     return 0;
