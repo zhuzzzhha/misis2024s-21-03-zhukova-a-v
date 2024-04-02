@@ -38,7 +38,7 @@ int blur - параметр размытия;
 
 | Сгенерированное изображение | Детекция LoG | Детекция бинаризация + компоненты |
 |----------------------|------------|----------------|
-| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/build/prj.lab/lab03/space_image.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/build/prj.lab/lab03/space_color_image_each_channels.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/build/prj.lab/lab03/space_color_image_all_channels.png) |
+| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/tree/main/images/lab_1/innitial_img.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/tree/main/images/lab_1/log_img.png) | ![]() |
 
 
 
