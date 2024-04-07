@@ -1,6 +1,5 @@
 #pragma once
 #include "opencv2/opencv.hpp"
-#include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
 #include <iostream>
 #include <fstream>
@@ -8,17 +7,12 @@
 #include <vector>
 #include <random>
 
-#include "opencv2/imgcodecs.hpp"
-#include "opencv2/imgproc.hpp"
-#include "opencv2/core.hpp"
 #include <opencv2/core/utility.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
 #include "opencv2/features2d.hpp"
 
 
@@ -435,7 +429,7 @@ double calculateIoU(const cv::Mat& mask, const Circle& groundTruth) {
     cv::Mat binaryMask;
     cv::threshold(mask, binaryMask, 0, 1, cv::THRESH_BINARY);
 
-    // Создаем круговую маску для ground truth
+    // Г‘Г®Г§Г¤Г ГҐГ¬ ГЄГ°ГіГЈГ®ГўГіГѕ Г¬Г Г±ГЄГі Г¤Г«Гї ground truth
     cv::Mat circleMask = cv::Mat::zeros(mask.size(), CV_8U);
     cv::circle(circleMask, cv::Point(groundTruth.x, groundTruth.y), groundTruth.r, cv::Scalar(255), 1);
 
