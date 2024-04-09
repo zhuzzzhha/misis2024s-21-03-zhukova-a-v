@@ -10,26 +10,50 @@ Mat makeAdaptiveBinarization(Mat& image, double max_value)
     return binary_image;
 }
 //--------------------------------------------------------------------------------
-Mat connectedComponentsDetection(Mat& image) 
+std::vector<Circle> detectConnectedComponents(const cv::Mat& inputImage, Mat& visualizationImage, int areaThreshold)
 {
-    Mat labels;
-    int num_objects = connectedComponents(image, labels);
+    cv::Mat grayImage, binaryImage;
 
-    Mat colored_labels;
-    cvtColor(image, colored_labels, COLOR_GRAY2BGR);
-
-    for (int i = 1; i < num_objects; i++) {
-        Mat component_mask = (labels == i);
-        Vec3b color(255, 255, 255);
-        colored_labels.setTo(color, component_mask);
+    if (inputImage.channels() == 3) {
+        cv::cvtColor(inputImage, grayImage, cv::COLOR_BGR2GRAY);
     }
-    cvtColor(image, colored_labels, COLOR_GRAY2BGR);
-    return colored_labels;
+    else {
+        grayImage = inputImage.clone();
+    }
+
+    cv::threshold(grayImage, binaryImage, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+    cv::Mat labels, stats, centroids;
+    int nLabels = cv::connectedComponentsWithStats(binaryImage, labels, stats, centroids, 8, CV_32S);
+
+    std::vector<Circle> circles;
+    if (inputImage.channels() == 1) {
+        cv::cvtColor(inputImage, visualizationImage, cv::COLOR_GRAY2BGR);
+    }
+    else {
+        visualizationImage = inputImage.clone();
+    }
+
+    visualizationImage = cv::Mat::zeros(inputImage.size(), CV_8UC3); // Изображение исходного размера
+
+    for (int i = 1; i < nLabels; i++) {
+        if (stats.at<int>(i, cv::CC_STAT_AREA) > areaThreshold) {
+            double centroidX = centroids.at<double>(i, 0);
+            double centroidY = centroids.at<double>(i, 1);
+            int area = stats.at<int>(i, cv::CC_STAT_AREA);
+            double radius = std::sqrt(area / M_PI);
+            circles.push_back({ centroidX, centroidY, radius });
+            cv::circle(visualizationImage, cv::Point(centroidX, centroidY), radius, cv::Scalar(0, 0, 255), 2);
+        }
+    }
+
+    return circles;
 }
 //--------------------------------------------------------------------------------
-Mat DoDetection(Mat& image, double max_value)
+std::vector<Circle> DoDetection(Mat& src_image, Mat& dst_image, double max_value, int treshold_area)
 {
-    Mat binary_image = makeAdaptiveBinarization(image, max_value);
-    Mat connected_comps_image = connectedComponentsDetection(binary_image);
-    return connected_comps_image;
+    Mat binary_image = makeAdaptiveBinarization(src_image, max_value);
+    std::vector<Circle> detection_vec = detectConnectedComponents(binary_image, dst_image, treshold_area);
+    return detection_vec;
 }
+//--------------------------------------------------------------------------------

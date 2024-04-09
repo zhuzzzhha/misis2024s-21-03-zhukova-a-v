@@ -79,12 +79,14 @@ void DoLoG(Mat& image_src)
     cv::imwrite("gau.png", log_image);
 }
 //--------------------------------------------------------------------------------
-void DoConnectedCompsDetection(Mat& image_src)
+std::vector<Circle> DoConnectedCompsDetection(Mat& image_src, Mat& image_dst, double max_value,int threshold_area)
 {
-    Mat comps_detection_image = DoDetection(image_src, threshold_value);
-    cv::imshow("Connected components detection", comps_detection_image);
-    cv::imwrite("connected_comps.png", comps_detection_image);
+    std::vector<Circle> detection_vec = DoDetection(image_src, image_dst, max_value, threshold_area);
+    cv::imshow("Connected components detection", image_dst);
+    cv::imwrite("connected_comps.png", image_dst);
+    return detection_vec;
 }
+
 //--------------------------------------------------------------------------------
 void on_trackbar(int, void*)
 {
@@ -99,7 +101,9 @@ void on_trackbar(int, void*)
     generateImageWithCircles(img_stat, count, min_radius, max_radius, min_contrast, max_contrast, std_value, blur_value, false);
     CreateInitImageWindow();
     DoLoG(img_stat.image);
-    DoConnectedCompsDetection(img_stat.image);
+
+    Mat dst_image;
+    DoConnectedCompsDetection(img_stat.image, dst_image, threshold_value,10);
 }
 
 //--------------------------------------------------------------------------------

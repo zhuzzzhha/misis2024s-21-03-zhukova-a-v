@@ -13,12 +13,16 @@
 #include <opencv2/video/tracking.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
+#include <cmath>
 #include "opencv2/features2d.hpp"
+#include "image_generator.h"
 
 using namespace cv;
+static double M_PI = 3.14;
 //--------------------------------------------------------------------------------
 cv::Mat makeAdaptiveBinarization(Mat& image, double max_value);
 //--------------------------------------------------------------------------------
-Mat connectedComponentsDetection(Mat& image);
+std::vector<Circle> detectConnectedComponents(const cv::Mat& inputImage, Mat& visualizationImage, int areaThreshold);
 //--------------------------------------------------------------------------------
-Mat DoDetection(Mat& image, double max_value);
+std::vector<Circle> DoDetection(Mat& src_image, Mat& dst_image, double max_value, int treshold_area);
+//--------------------------------------------------------------------------------
