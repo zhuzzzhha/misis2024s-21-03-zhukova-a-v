@@ -20,6 +20,8 @@
 #define GENERATE_JSONNAME(name, kernel_size) (name + std::to_string(kernel_size) + ".json")
 
 //--------------------------------------------------------------------------------
+static double M_PI = 3.14;
+//--------------------------------------------------------------------------------
 struct Circle
 {
     double x;

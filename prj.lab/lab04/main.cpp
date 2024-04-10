@@ -17,6 +17,7 @@
 #include "image_generator.h"
 #include "log_detector.h"
 #include "cnctd_comps_detector.h"
+#include "evaluator.h"
 
 
 using namespace cv;
@@ -86,7 +87,6 @@ std::vector<Circle> DoConnectedCompsDetection(Mat& image_src, Mat& image_dst, do
     cv::imwrite("connected_comps.png", image_dst);
     return detection_vec;
 }
-
 //--------------------------------------------------------------------------------
 void on_trackbar(int, void*)
 {
@@ -103,7 +103,11 @@ void on_trackbar(int, void*)
     DoLoG(img_stat.image);
 
     Mat dst_image;
-    DoConnectedCompsDetection(img_stat.image, dst_image, threshold_value,10);
+    std::vector<Circle> detected_circles = DoConnectedCompsDetection(img_stat.image, dst_image, threshold_value,10);
+
+    int TP = 0, FP = 0, FN = 0;
+    evaluateDetections(img_stat.stats.value().circles, detected_circles, TP, FP, FN);
+    std::cout << "TP: " << TP << std::endl << "FP: " << FP << std::endl << "FN: " << FN << std::endl;
 }
 
 //--------------------------------------------------------------------------------
@@ -146,22 +150,7 @@ void CreateTrackbars()
 }
 
 //--------------------------------------------------------------------------------
-cv::Mat normalizeGradientImage(const cv::Mat src) {
-    double minVal, maxVal;
-    cv::Mat new_src = src;
-    cv::minMaxLoc(src, &minVal, &maxVal);
-    double scale = 255.0 / (maxVal - minVal);
-    double shift = -minVal * scale;
-    cv::Mat dst;
-    src.convertTo(dst, CV_8U, scale, shift);
-    //dst.convertTo(dst, CV_32F);
-    return dst;
-}
-//--------------------------------------------------------------------------------
-void applyThreshold_symple(cv::Mat& src, cv::Mat& dst, int threshold) {
-    cv::threshold(src, dst, threshold, 255, cv::THRESH_BINARY);
-}
-//--------------------------------------------------------------------------------
+
 
 //--------------------------------------------------------------------------------
 //cv::Mat LoG(const cv::Mat& inputImage, int blockSize, int houghParameters_param, int houghParameters_sz, int houghParameters_p0, int houghParameters_p1, int houghParameters_p2, bool ZEROS, int thresholdValue) {
@@ -185,33 +174,7 @@ void applyThreshold_symple(cv::Mat& src, cv::Mat& dst, int threshold) {
 //    applyThreshold_symple(absLaplacianImage, absLaplacianImage, thresholdValue);
 //    return inputImage;
 //}
-//--------------------------------------------------------------------------------
-cv::Mat createMaskForBlackPixels(const cv::Mat& inputImage, int kernel_size) {
-    
-    cv::Mat new_img;
-    inputImage.convertTo(new_img,CV_8U);
-    cv::Mat mask(new_img.size(), CV_8U, cv::Scalar(0));
 
-    for (int y = 0; y < new_img.rows; ++y) {
-        for (int x = 0; x < new_img.cols; ++x) {
-            int brightness = new_img.at<uchar>(y, x);
-
-            if (brightness >= 0 && brightness<=5) {
-                cv::circle(mask, cv::Point(x, y), kernel_size, cv::Scalar(255, 255, 255),1);
-            }
-        }
-    }
-    imwrite("mask.png",mask);
-    return mask;
-}
-//--------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------
-void applyThreshold(cv::Mat& src, cv::Mat& dst, double threshold, int blockSize) {
-
-    cv::adaptiveThreshold(src, dst, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv::THRESH_BINARY, blockSize, threshold);
-}
 //--------------------------------------------------------------------------------
 struct Metrics {
     int TP = 0;
@@ -219,56 +182,7 @@ struct Metrics {
     int FP = 0;
     int FN = 0;
 };
-//--------------------------------------------------------------------------------
-//double calculateIoU(const cv::Mat& mask, const Circle& groundTruth) {
-//    cv::Mat binaryMask;
-//    cv::threshold(mask, binaryMask, 0, 1, cv::THRESH_BINARY);
-//
-//    // Создаем круговую маску для ground truth
-//    cv::Mat circleMask = cv::Mat::zeros(mask.size(), CV_8U);
-//    cv::circle(circleMask, cv::Point(groundTruth.x, groundTruth.y), groundTruth.r, cv::Scalar(255), 1);
-//
-//    double intersection = cv::countNonZero(binaryMask & circleMask);
-//    double unionAreaValue = cv::countNonZero(binaryMask) + cv::countNonZero(circleMask) - intersection;
-//
-//    double iou = intersection / unionAreaValue;
-//    return iou;
-//}
-//--------------------------------------------------------------------------------
-Metrics calculateMetrics(std::vector<double> iou) {
-    double threshold_low = 20;
-    Metrics current_metric;
-    for (double metric : iou)
-    {
-        if (threshold_low <= metric)
-            current_metric.TP++;
-        else if (metric >= 0)
-            current_metric.FN++;
-        else
-            current_metric.FP++;
-    }
-    return current_metric;
-}
-//--------------------------------------------------------------------------------
-//void evaluateQuality()
-//{
-//   ImageWithStats eval_image = generateImageWithCircles(6, 3, 20, min_contrast, max_contrast, 3, 2, false);
-//   imwrite("initial_img.png", eval_image.image);
-//
-//   detected_circles = LoG(eval_image.image);
-//   imwrite("log_img.png", detected_circles);
-//
-//   Mat  cur_mask = createMaskForBlackPixels(detected_circles, 7);
-//
-//   std::vector<double> iou;
-//   for (int i = 0; i < eval_image.stats.value().circles.size(); i++)
-//   {
-//       double cur_iou = calculateIoU(cur_mask, eval_image.stats.value().circles[i]);
-//       iou.push_back(cur_iou);
-//   }
-//   Metrics final_metric = calculateMetrics(iou);
-//   cout << "TP: " << final_metric.FP << std::endl << "FP:" << final_metric.FP<< std::endl << "FN: " << final_metric.FN;
-//}
+
 //--------------------------------------------------------------------------------
 int main(void)
 {

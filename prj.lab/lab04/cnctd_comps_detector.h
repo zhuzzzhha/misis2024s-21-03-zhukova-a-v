@@ -18,7 +18,7 @@
 #include "image_generator.h"
 
 using namespace cv;
-static double M_PI = 3.14;
+
 //--------------------------------------------------------------------------------
 cv::Mat makeAdaptiveBinarization(Mat& image, double max_value);
 //--------------------------------------------------------------------------------
