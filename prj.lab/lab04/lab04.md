@@ -36,11 +36,17 @@ int blur - параметр размытия;
 
 | Сгенерированное изображение | Детекция LoG | Детекция бинаризация + компоненты |
 |----------------------|------------|----------------|
-| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/images/lab_1/initial_img.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/images/lab_1/log_img.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/tree/main/images/lab_1/connected_comps.png) |
+| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/generated.png) | ![]() | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/connected_comps.png) |
 
+Параметры входного изображения:
+Количество кругов: 49
+Std шума: 20
+Blur: 2
 
-
+Вычисленные показатели
+TP: 48
+FP: 565
+FN: 1
 
 
 ## Вывод
-Реализованный алгоритм автоконтраста позволяет настраивать контрастность изображения, визуально делая цвета более сочными, а объекты различимыми. При этом контрастирование по каждому каналу отдельно выдает изображение в более естественных цветах, нежели чем общий подсчет по всем каналам.
