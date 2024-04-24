@@ -1,0 +1,2 @@
+add_subdirectory(src)
+target_link_libraries(src PRIVATE opencv_core opencv_imgproc opencv_highgui)
