@@ -33,9 +33,9 @@ int blur - параметр размытия;
 
 ## Результат
 
-| Сгенерированное изображение | Детекция LoG | Детекция бинаризация + компоненты связности |
-|----------------------|------------|----------------|
-| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/generated.png) | ![]() | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/connected_comps.png) |
+| Сгенерированное изображение | Сегментация |
+|----------------------|------------|
+| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/gr_truth_image0.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/segmented_image1.png) |
 
 Параметры входного изображения:
 Количество кругов: 49
