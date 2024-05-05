@@ -23,13 +23,13 @@ int blur - параметр размытия;
 
 
 ### Подсчет качества детекции
-Для сформированных бинарных масок подсчитываем матрицу путаницы с помощью `ContingencyTable()` и вычисляем значений функций
-`Sensitivity (Recall, true positive rate)`
-`Specificity (true negative rate)`
-`Fallout (false positive rate)`
-`Precision (Confidence)`
-`Accuracy`
-`Area under ROC Curve`
+Для сформированных бинарных масок подсчитываем матрицу путаницы с помощью `ContingencyTable()` и вычисляем значений функций \
+`Sensitivity (Recall, true positive rate)` Sensitivity = TP / (TP + FN) \
+`Specificity (true negative rate)` Specificity = TN / (TN + FP) \
+`Fallout (false positive rate)` Fallout = FP / (TN + FP) \
+`Precision (Confidence)` Precision = TP / (TP + FP) \
+`Accuracy` Accuracy = (TP + TN) / (TP + TN + FP + FN) \
+`Area under ROC Curve` AUC = ∑ [(x_{i+1} - x_i) * (y_i + y_{i+1}) / 2] (от i=1 до n-1)
 
 ## Результат
 
