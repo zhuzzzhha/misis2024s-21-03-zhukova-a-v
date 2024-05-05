@@ -40,20 +40,20 @@ int blur - параметр размытия;
 Параметры входного изображения:\
 Количество кругов: 49 \
 Std шума: 20 \
-Blur: 2 \
+Blur: 2
 
 Вычисленные показатели \
 TP: 284410 \
 FP: 18090 \
 FN: 0 \
-TN: 0 \
+TN: 0
 
 Sensitivity (Recall, true positive rate) = 1.000 \
 Specificity (true negative rate) = 0.000 \
 Fallout (false positive rate) = 1.000 \
 Precision (Confidence) = 0.940 \
-Accuracy = 0.940 \ 
-Area under ROC Curve = 0.500 \
+Accuracy = 0.940\ 
+Area under ROC Curve = 0.500
 
 
 ## Вывод
