@@ -53,7 +53,6 @@ Specificity (true negative rate) = 0.000 \
 Fallout (false positive rate) = 1.000 \
 Precision (Confidence) = 0.940 \
 Accuracy = 0.940\ 
-Area under ROC Curve = 0.500
 
 
 ## Вывод
