@@ -38,6 +38,8 @@ int blur - параметр размытия;
 |----------------------|------------|----------------|
 | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/generated.png) | ![]() | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/connected_comps.png) |
 
+
+
 Параметры входного изображения:
 Количество кругов: 49
 Std шума: 20
