@@ -47,10 +47,10 @@ Std шума: 20 \
 Blur: 2
 
 Вычисленные показатели \
-TP: 639120 \ 93060 \ 323484
-FP: 41505 \ 6165 \ 18741
+TP: 639120 \ 93060 \ 323484 \
+FP: 41505 \ 6165 \ 18741 \
 FN: 0 \
-TN: 0
+TN: 0 \
 
 Sensitivity (Recall, true positive rate) = 1.000 \ 1.000
 Specificity (true negative rate) = 0.000 \ 0.000
