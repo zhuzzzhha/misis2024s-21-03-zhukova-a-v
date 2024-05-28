@@ -52,11 +52,11 @@ FP: 41505 \ 6165 \ 18741 \
 FN: 0 \
 TN: 0 \
 
-Sensitivity (Recall, true positive rate) = 1.000 \ 1.000
-Specificity (true negative rate) = 0.000 \ 0.000
-Fallout (false positive rate) = 1.000 \ 1.000
-Precision (Confidence) = 0.939 \ 0.938 \ 0.945
-Accuracy = 0.939\ 0.938 \ 0.945
+Sensitivity (Recall, true positive rate) = 1.000 \ 1.000 \
+Specificity (true negative rate) = 0.000 \ 0.000 \
+Fallout (false positive rate) = 1.000 \ 1.000 \
+Precision (Confidence) = 0.939 \ 0.938 \ 0.945 \
+Accuracy = 0.939\ 0.938 \ 0.945 \
 
 
 ## Вывод
