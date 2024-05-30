@@ -3,7 +3,10 @@
 #include <ostream>
 #include <string>
 #include <filesystem>
+#include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>
+
+using json = nlohmann::json;
 
 
 #define GENERATE_FILENAME(name, num) (name + to_string(num) + ".png")
@@ -11,6 +14,19 @@
 
 #define FILES_ORDER_NAME "files_order.txt"
 
+//--------------------------------------------------------------------------------
+struct Polygon
+{
+	std::vector<cv::Point> points;
+};
+//--------------------------------------------------------------------------------
+// Структура для хранения данных из JSON
+struct JSONData {
+	std::string filename;
+	std::vector<Polygon> polygons;
+	int image_width = 250;
+	int image_height = 250;
+};
 //--------------------------------------------------------------------------------
 struct CircleInfo
 {
@@ -25,18 +41,6 @@ struct CirclesStatistics
 	int image_width;
 	int image_height;
 };
-//--------------------------------------------------------------------------------
-std::string getCurrentDateTimeAsString() {
-	auto currentTime = std::chrono::system_clock::now();
-
-	std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime);
-
-	std::tm* currentTime_tm = std::localtime(&currentTime_t);
-
-	std::ostringstream oss;
-	oss << (currentTime_tm->tm_min * 60 + currentTime_tm->tm_sec);
-	return oss.str();
-}
 //--------------------------------------------------------------------------------
 void WriteCirclesInJSON(const std::string& filename, CirclesStatistics& stats)
 {
@@ -124,3 +128,43 @@ cv::Mat DrawDifference(CirclesStatistics& ground_truth, CirclesStatistics& error
 	return image;
 
 }
+//--------------------------------------------------------------------------------
+void GetDataFromJSON(std::filesystem::path file_path, JSONData& data)
+{
+	std::ifstream json_file(file_path);
+	if (!json_file.is_open()) {
+		throw std::runtime_error("Не удалось открыть JSON файл: " + file_path.string());
+	}
+
+	json j;
+	json_file >> j;
+	data.filename = j["filename"];
+
+	for (auto& region : j["regions"]) {
+		Polygon polygon;
+		for (auto& point : region["shape_attributes"]["all_points_x"]) {
+			polygon.points.push_back(cv::Point(point.get<int>(), 0));
+		}
+
+		for (int k = 0;k < region["shape_attributes"]["all_points_y"].size(); ++k) {
+			polygon.points[k].y = (region["shape_attributes"]["all_points_y"][k].get<int>());
+		}
+
+		data.polygons.push_back(polygon);
+	}
+}
+	//--------------------------------------------------------------------------------
+	cv::Mat GenerateImageFromJSON(JSONData& data)
+	{
+		cv::Mat image(data.image_height, data.image_width, CV_8U, cv::Scalar(255));
+		
+
+		for (auto& polygon : data.polygons)
+		{
+			cv::fillPoly(image, polygon.points, cv::Scalar(0, 0, 255),1);
+		}
+		cv::bitwise_not(image, image);
+		return image;
+	}
+	//--------------------------------------------------------------------------------
+

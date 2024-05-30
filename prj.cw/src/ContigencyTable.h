@@ -52,6 +52,8 @@ public:
 		d = 0;
 		for (int y = 0; y < movingImage.rows; ++y) {
 			for (int x = 0; x < movingImage.cols; ++x) {
+				auto m = movingImage.at<uchar>(y, x);
+				auto f = fixedImage.at<uchar>(y, x);
 					tp += (movingImage.at<uchar>(y, x) && fixedImage.at<uchar>(y, x)) ? 1 : 0;
 					tn += (!movingImage.at<uchar>(y, x) && !fixedImage.at<uchar>(y, x)) ? 1 : 0;
 					fp += (movingImage.at<uchar>(y, x) && !fixedImage.at<uchar>(y, x)) ? 1 : 0;
