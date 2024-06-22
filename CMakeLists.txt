@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 3.20)
 
 project(zhukova-a-v)
 
+# Указание пути к VCPKG из командной строки
+if(NOT VCPKG_ROOT)
+  set(VCPKG_ROOT "$ENV{VCPKG_ROOT}")
+endif()
 
-set(VCPKG_ROOT "C:/Users/ALLA/vcpkg")
-set(VCPKG_INSTALLED_DIR "C:/Users/ALLA/vcpkg/installed")
+set(VCPKG_INSTALLED_DIR "${VCPKG_ROOT}/installed")
 set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
@@ -28,6 +31,7 @@ set(TIFF_LIBRARY "${VCPKG_ROOT}/installed/x64-windows/lib/tiff")
 find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui)
 include_directories("${VCPKG_ROOT}/installed/x64-windows/include" "${VCPKG_ROOT}/buildtrees")
 add_subdirectory(prj.lab)
-#add_subdirectory(prj.cw)
+add_subdirectory(prj.cw)
 
-#set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
+install(TARGETS src DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/install)
+install(FILES prj.cw/src/test.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/install)
