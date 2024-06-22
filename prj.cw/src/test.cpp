@@ -36,32 +36,24 @@ int main(int argc, char* argv[])
 	if (std::filesystem::create_directory(output_metrics_dir / "metrics"))
 		output_metrics_dir /= "metrics";
 
-	//инициализируем метрики
+	//                      
 		initMetricInfo();
 	std::filesystem::path path_to_image = input_dir;
 
-	//генерируем ground truth
+	//           ground truth
 	CirclesStatistics gr_truth_stats;
 	std::string ground_truth_filename;
 
 	int imageCounter = 0;
 
-	std::ofstream outFile(FILES_ORDER_NAME);
-	if (outFile.is_open()) {
-		outFile << imageCounter;
-		outFile.close();
-	}
-	else {
-		std::cerr << "Unable to open file for writing." << std::endl;
-	}
 
 	std::filesystem::path path_to_fixed = path_to_image / ground_truth_filename;
 
-	std::filesystem::path path_to_json = path_to_image / "test.json";
+	std::filesystem::path path_to_json = "test.json";
 	JSONData data;
 	GetDataFromJSON(path_to_json, data);
 
-	//генерируем ошибочные сегментации
+	//                                
 	while (1) {
 		std::cout << "Enter error type: \n"
 			<< "0: DILATION\n"
@@ -74,7 +66,7 @@ int main(int argc, char* argv[])
 		ErrorParams params = { 0 };
 		JSONData error_data;
 
-		//сравниваем, выводим значение метрик
+		//          ,                        
 		++imageCounter;
 		cv::Mat ground_truth = GenerateImageFromJSON(data);
 		cv::imwrite(output_images_dir.string() + "\\" + "ground_truth.png", ground_truth);
