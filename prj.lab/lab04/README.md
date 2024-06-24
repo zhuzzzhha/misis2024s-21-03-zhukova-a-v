@@ -92,7 +92,7 @@ int blur - параметр размытия;
 
 Выполним алгоритм для различных изображений:
 |Сгенерированное изображение |Детекция бинаризация + компоненты связности | Порог для компонент свзяности (areaThreshold) |Порог для IoU | 
-|-------------|-------------|--|--|
+|----------------|----------------|--|--|
 | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/generated_5.png) |![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/connected_comps_5_144.png) |144 |  20 |
 
 | Параметр | Значение |
@@ -110,7 +110,7 @@ int blur - параметр размытия;
 |15|103|10|
 
 |Сгенерированное изображение |Детекция бинаризация + компоненты связности | Порог для компонент свзяности (areaThreshold) |Порог для IoU | 
-|-------------|-------------|--|--|
+|----------------|----------------|--|--|
 | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/generated_7.png) |![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/connected_comps_7_177.png) |177 |  20 |
 
 | Параметр | Значение |
@@ -129,8 +129,8 @@ int blur - параметр размытия;
 
 
 |Сгенерированное изображение |Детекция бинаризация + компоненты связности | Порог для компонент свзяности (areaThreshold) |Порог для IoU | 
-|-------------|-------------|--|--|
-| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/generated_7.png) |![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/connected_comps_7_177.png) |131 |  20 |
+|----------------|----------------|--|--|
+| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/generated_10.png) |![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/connected_comps_10_135.png) |131 |  20 |
 
 | Параметр | Значение |
 |---|---|
@@ -148,8 +148,8 @@ int blur - параметр размытия;
 
 
 |Сгенерированное изображение |Детекция бинаризация + компоненты связности | Порог для компонент свзяности (areaThreshold) |Порог для IoU | 
-|-------------|-------------|--|--|
-| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/generated_7.png) |![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/connected_comps_7_177.png) |143 |  20 |
+|----------------|----------------|--|--|
+| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/generated_9.png) |![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/connected_comps_9_143.png) |143 |  20 |
 
 | Параметр | Значение |
 |---|---|
