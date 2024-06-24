@@ -41,22 +41,48 @@ diff определяет критерий останова для алгори�
 |![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/gr_truth_image2.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/segmented_image3.png) |
 |![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/gr_truth_image4.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/segmented_image4.png) |
 
-Параметры входного изображения:\
-Количество кругов: 49 \
-Std шума: 20 \
-Blur: 2
+| Параметр | Значение |
+|---|---|
+| Количество кругов | 49 |
+| Std шума | 20 |
+| Blur | 2 |
 
 Вычисленные показатели \
-TP: 639120 \ 93060 \ 323484 \
-FP: 41505 \ 6165 \ 18741 \
-FN: 0 \
-TN: 0 \
+| Показатель | Значение |
+|---|---|
+| TP | 639120 |
+| FP | 41505 |
+| FN | 0 |
+| TN | 0 |
+| Sensitivity (Recall, true positive rate) | 1.000 |
+| Specificity (true negative rate) | 0.000 |
+| Fallout (false positive rate) | 1.000 |
+| Precision (Confidence) | 0.939 |
+| Accuracy | 0.939 |
 
-Sensitivity (Recall, true positive rate) = 1.000 \ 1.000 \
-Specificity (true negative rate) = 0.000 \ 0.000 \
-Fallout (false positive rate) = 1.000 \ 1.000 \
-Precision (Confidence) = 0.939 \ 0.938 \ 0.945 \
-Accuracy = 0.939\ 0.938 \ 0.945 \
+| Показатель | Значение |
+|---|---|
+| TP | 93060 |
+| FP | 6165 |
+| FN | 0 |
+| TN | 0 |
+| Sensitivity (Recall, true positive rate) | 1.000 |
+| Specificity (true negative rate) | 0.000 |
+| Fallout (false positive rate) | 1.000 |
+| Precision (Confidence) | 0.938 |
+| Accuracy | 0.938 |
+
+| Показатель | Значение |
+|---|---|
+| TP | 323484 |
+| FP | 18741 |
+| FN | 0 |
+| TN | 0 |
+| Sensitivity (Recall, true positive rate) | 1.000 |
+| Specificity (true negative rate) | 0.000 |
+| Fallout (false positive rate) | 1.000 |
+| Precision (Confidence) | 0.945 |
+| Accuracy | 0.945 |
 
 
 ## Вывод
