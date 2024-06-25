@@ -39,9 +39,7 @@ diff определяет критерий останова для алгори�
 
 | Сгенерированное изображение | Сегментация |
 |----------------------|------------|
-| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/gr_truth_image0.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/segmented_image1.png) |
-|![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/gr_truth_image2.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/segmented_image3.png) |
-|![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/gr_truth_image4.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/segmented_image4.png) |
+| ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/gr_truth_1.png) | ![](https://github.com/zhuzzzhha/misis2024s-21-03-zhukova-a-v/blob/main/images/lab_1/segmented_image1.png) |
 
 | Параметр | Значение |
 |---|---|
@@ -61,30 +59,6 @@ diff определяет критерий останова для алгори�
 | Fallout (false positive rate) | 1.000 |
 | Precision (Confidence) | 0.939 |
 | Accuracy | 0.939 |
-
-| Показатель | Значение |
-|---|---|
-| TP | 93060 |
-| FP | 6165 |
-| FN | 0 |
-| TN | 0 |
-| Sensitivity (Recall, true positive rate) | 1.000 |
-| Specificity (true negative rate) | 0.000 |
-| Fallout (false positive rate) | 1.000 |
-| Precision (Confidence) | 0.938 |
-| Accuracy | 0.938 |
-
-| Показатель | Значение |
-|---|---|
-| TP | 323484 |
-| FP | 18741 |
-| FN | 0 |
-| TN | 0 |
-| Sensitivity (Recall, true positive rate) | 1.000 |
-| Specificity (true negative rate) | 0.000 |
-| Fallout (false positive rate) | 1.000 |
-| Precision (Confidence) | 0.945 |
-| Accuracy | 0.945 |
 
 
 ## Вывод
